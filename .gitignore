@@ -1,0 +1,14 @@
+# 忽略虛擬環境資料夾
+venv/
+
+# 忽略 Python 編譯過程產生的檔案
+__pycache__/
+*.py[cod]
+
+# 忽略 IDE 設定（如果有用 VSCode 或 PyCharm）
+.vscode/
+.idea/
+
+*.mp3
+
+tempCodeRunnerFile.py
