@@ -9,8 +9,10 @@ from gpiozero import LED
 
 # 全域變數與模型初始化
 recognizer = sr.Recognizer()
-model = faster_whisper.WhisperModel("small", device="cpu")
+model = faster_whisper.WhisperModel("tiny", device="cpu")
 led1 = LED(17)
+led2 = LED(18)
+led3 = LED(23)
 
 
 if not os.path.exists("turnoff.mp3"):
@@ -32,7 +34,7 @@ def get_audio_from_mic():
         return recognizer.listen(source)
 
 # 異步處理錄音檔案辨識
-async def do_task(audio):
+def do_task(audio):
     global playing_audio
     # 儲存第一段錄音
     date_time_precise = datetime.now().strftime("%Y%m%d%H%M%S%f")
@@ -55,12 +57,18 @@ async def do_task(audio):
         if "turn off the light" in result.lower():
             playing_audio = True
             led1.off()
+            led2.off()
+            led3.off()
             play_audio("turnoff.mp3")
+            time.sleep(2)
             playing_audio = False 
         elif "turn on the light" in result.lower():
             playing_audio = True
             led1.on()
+            led2.on()
+            led3.on()
             play_audio("turnon.mp3")
+            time.sleep(2)
             playing_audio = False
         elif is_python_command(result):
             playing_audio = True
@@ -100,20 +108,25 @@ def is_python_command(result : str) -> bool:
     return "okay python" in result.lower().replace(",","") or "okay pysad" in result.lower().replace(",","") or "ok python" in result.lower().replace(",","")
 
 # 主持續監聽的非同步迴圈
-async def listen_continuously():
+def listen_continuously():
     with sr.Microphone() as source:
         # 初次調整背景噪音
         recognizer.adjust_for_ambient_noise(source)
         while True:
             if not playing_audio:
                 print("Listening...")
-                audio = await asyncio.to_thread(recognizer.listen, source)
-                asyncio.create_task(do_task(audio))
+                # audio = await asyncio.to_thread(recognizer.listen, source)
+                # asyncio.create_task(do_task(audio))
+                audio = recognizer.listen(source,phrase_time_limit=2)
+                do_task(audio)
+                # time.sleep(1)
             else:
-                await asyncio.sleep(0.1)
+                time.sleep(2)
 
 # 控制播放與錄音的旗標，避免同時發生
 playing_audio = False
-audio_to_play_music = "aplay"
+audio_to_play_music = "ffplay -nodisp -autoexit"
 
-asyncio.run(listen_continuously())
+
+listen_continuously()
+# asyncio.run(listen_continuously())
